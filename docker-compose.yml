@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+  db:
+    image: mysql2
+    build: ./bdd-docker/.
+    ports:
+      - "${DB_EXTERNAL_PORT}:${DB_DOCKER_PORT}"
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD= "yes"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      static-network:
+        ipv4_address: "${DB_DOCKER_IP}"
+  api:
+    depends_on:
+      - db
+    image: express-api
+    env_file:
+      - ./.env
+    build: ./api-docker/.
+    restart: always
+    ports:
+      - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
+    networks:
+      - static-network
+  front:
+    depends_on:
+      - api
+    image: angular-app
+    build: ./front-docker/.
+    ports:
+      - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
+    networks:
+      - static-network
+volumes:
+  db-data:
+networks:
+  static-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "${NETWORK_SUBNET_IP}"
