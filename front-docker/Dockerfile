@@ -7,7 +7,10 @@ FROM node:latest as build
 WORKDIR /usr/local/app
 
 # Add the source code to app
-COPY ./front-repos/au_bon_beurre_front /usr/local/app/
+COPY ./front-docker/front-repos/au_bon_beurre_front /usr/local/app/
+
+# Copy the .env file so angular can know the API_EXTERNAL_PORT
+COPY .env /usr/local/app/src/assets/config.env
 
 # Install all the dependencies
 RUN npm install

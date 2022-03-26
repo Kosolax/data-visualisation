@@ -49,7 +49,7 @@ export class HomeComponent implements OnInit {
       {
         next: value =>
         {
-          this.units = value;
+          this.units = value as unit[];
           this.generateChart();
         }
       }
@@ -63,7 +63,7 @@ export class HomeComponent implements OnInit {
       {
         next: value =>
         {
-          this.automatons = value;
+          this.automatons = value as automaton[];
           this.generateChart();
         }
       }
@@ -82,7 +82,7 @@ export class HomeComponent implements OnInit {
       {
         next: value =>
         {
-          this.list = value;
+          this.list = value as production[];
         }
       }
     );

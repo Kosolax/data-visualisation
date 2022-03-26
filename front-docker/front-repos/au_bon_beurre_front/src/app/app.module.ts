@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatCardModule} from '@angular/material/card';
+import { ConfigService } from './services/config.service';
  
 PlotlyModule.plotlyjs = PlotlyJS;
 
@@ -34,7 +35,7 @@ PlotlyModule.plotlyjs = PlotlyJS;
     MatGridListModule,
     MatCardModule
   ],
-  providers: [ProductionService],
+  providers: [ProductionService, ConfigService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

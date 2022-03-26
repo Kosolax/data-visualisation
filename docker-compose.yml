@@ -28,7 +28,9 @@ services:
     depends_on:
       - api
     image: angular-app
-    build: ./front-docker/.
+    build: 
+      dockerfile: ./front-docker/Dockerfile
+      context: ./
     ports:
       - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
     networks:
