@@ -1,5 +1,18 @@
 version: "3.9"
 services:
+  db:
+      image: mysql-db
+      restart: always
+      build: ./bdd-docker/.
+      ports:
+        - "${DB_EXTERNAL_PORT}:${DB_DOCKER_PORT}"
+      environment:
+        - MYSQL_ALLOW_EMPTY_PASSWORD= "yes"
+      # volumes:
+      #   - db-data:/var/lib/mysql
+      networks:
+          au-bon-beurre-network:
+              ipv4_address: "${DB_DOCKER_IP}"
   unit1:
     depends_on:
         - collector
@@ -43,6 +56,7 @@ services:
   collector:
       depends_on:
           - db
+          - writer
       image: collector
       command: python3.7 /home/collector.py "${COLLECTOR_EXTERNAL_PORT}" "${WRITER_DOCKER_IP}" "${WRITER_EXTERNAL_PORT}" "${SOCKET_SIZE}"
       build: collector-docker/.
@@ -55,48 +69,36 @@ services:
       depends_on:
           - db
       image: writer
-      command: python3 /home/writer.py "${WRITER_EXTERNAL_PORT}" "${DB_DOCKER_IP}" "${DB_EXTERNAL_PORT}" "${DB_DOCKER_NAME}" "root" "" "${SOCKET_SIZE}"
+      command: python3.7 /home/writer.py "${WRITER_EXTERNAL_PORT}" "${DB_DOCKER_IP}" "${DB_EXTERNAL_PORT}" "${DB_DOCKER_NAME}" "root" "" "${SOCKET_SIZE}"
       build: writer-docker/.
       ports:
           - "${WRITER_EXTERNAL_PORT}"
       networks:
           au-bon-beurre-network:
               ipv4_address: "${WRITER_DOCKER_IP}"
-  # db:
-  #     image: mysql-db
-  #     build: ./bdd-docker/.
-  #     ports:
-  #       - "${DB_EXTERNAL_PORT}:${DB_DOCKER_PORT}"
-  #     environment:
-  #       - MYSQL_ALLOW_EMPTY_PASSWORD= "yes"
-  #     volumes:
-  #       - db-data:/var/lib/mysql
-  #     networks:
-  #       static-network:
-  #         ipv4_address: "${DB_DOCKER_IP}"
-  # api:
-  #   depends_on:
-  #     - db
-  #   image: express-api
-  #   env_file:
-  #     - ./.env
-  #   build: ./api-docker/.
-  #   restart: always
-  #   ports:
-  #     - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
-  #   networks:
-  #     - au-bon-beurre-network
-  # front:
-  #   depends_on:
-  #     - api
-  #   image: angular-app
-  #   build: 
-  #     dockerfile: ./front-docker/Dockerfile
-  #     context: ./
-  #   ports:
-  #     - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
-  #   networks:
-  #     - au-bon-beurre-network
+  api:
+    depends_on:
+      - db
+    image: express-api
+    env_file:
+      - ./.env
+    build: ./api-docker/.
+    restart: always
+    ports:
+      - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
+    networks:
+      - au-bon-beurre-network
+  front:
+    depends_on:
+      - api
+    image: angular-app
+    build: 
+      dockerfile: ./front-docker/Dockerfile
+      context: ./
+    ports:
+      - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
+    networks:
+      - au-bon-beurre-network
 volumes:
   db-data:
 networks:

@@ -5,8 +5,6 @@ from _thread import *
 from unit import unit
 import json
 
-from types import SimpleNamespace
-
 # This file can get 5 arguments
 # 1 - The server port
 # 2 - The database IP
@@ -20,25 +18,87 @@ def multi_threaded_client(connection):
     while True:
         # get the client data
         data = connection.recv(int(argv[7])).decode("utf-8")
-        
-        # insert data into the db
-        # insert(data)
-        
         if not data:
             break
-            
+
+        # insert data into the db
+        insert(data)
     connection.close()
 
 def insert(data):
     # get data inside an object
-    myunit = json.loads(data)
-    myunit2 = json.loads(myunit)
-    # myunit3 = unit(myunit2)
-    print(myunit2["number"])
-    
-def do_unit_exit():
+    unit = load_unit(data)
+
     connection = db_connection()
+
+    if not connection:
+        return
+
     cursor = connection.cursor()
+
+    if not do_unit_exist(unit, cursor):
+        insert_unit(unit, cursor, connection)
+
+    for i in range(len(unit.automatons)):
+        if not do_automaton_exist(unit, i, cursor):
+            insert_automaton(unit, i, cursor, connection)
+
+        insert_production(unit, i, cursor, connection)
+    connection.close()
+
+def load_unit(data):
+    temp = json.loads(data)
+    dictionaryUnit = json.loads(temp)
+    return unit(dictionaryUnit["number"], dictionaryUnit["automatons"])
+
+def insert_production(unit, i, cursor, connection):
+    id_automaton = get_automaton_id(unit, i, cursor)
+    mySql_insert_query = """INSERT INTO productions (id_automaton, id_unit, tankTemperature, outsideTemperature, milkWeight, finalizedProductWeight, ph, k, naci, salmonel, ecoli, listeria, generatedTime) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s); """
+    record = (id_automaton, unit.number, unit.automatons[i].tankTemperature, unit.automatons[i].outsideTemperature, unit.automatons[i].milkWeight, 2, unit.automatons[i].ph, unit.automatons[i].k, unit.automatons[i].naci, unit.automatons[i].salmonel, unit.automatons[i].ecoli, unit.automatons[i].listeria, unit.automatons[i].generatedTime,)
+    cursor.execute(mySql_insert_query, record)
+    connection.commit()
+
+def get_automaton_id(unit, i, cursor):
+    sql_select_Query = "select id from automatons where number = %s and id_unit = %s;"
+    record = (unit.automatons[i].number, unit.number,)
+    cursor.execute(sql_select_Query, record)
+    records = cursor.fetchall()
+    if cursor.rowcount == 0:
+        return 0
+    
+    return records[0][0]
+
+def insert_automaton(unit, i, cursor, connection):
+    mySql_insert_query = """INSERT INTO automatons (id_unit, number, type) VALUES (%s, %s, %s); """
+    record = (unit.number, unit.automatons[i].number, unit.automatons[i].type,)
+    cursor.execute(mySql_insert_query, record)
+    connection.commit()
+
+def do_automaton_exist(unit, i, cursor):
+    sql_select_Query = "select * from automatons where number = %s and id_unit = %s;"
+    record = (unit.automatons[i].number, unit.number,)
+    cursor.execute(sql_select_Query, record)
+    records = cursor.fetchall()
+    if cursor.rowcount == 0:
+        return False
+    
+    return True
+
+def do_unit_exist(unit, cursor):
+    sql_select_Query = "select * from units where number = %s;"
+    record = (unit.number,)
+    cursor.execute(sql_select_Query, record)
+    records = cursor.fetchall()
+    if cursor.rowcount == 0:
+        return False
+    
+    return True
+
+def insert_unit(unit, cursor, connection):
+    mySql_insert_query = """INSERT INTO units VALUES (%s); """
+    record = (unit.number,)
+    cursor.execute(mySql_insert_query, record)
+    connection.commit()
 
 def db_connection():
     return mysql.connect(user=argv[5], password=argv[6], host=argv[2], port=argv[3], database=argv[4])

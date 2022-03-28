@@ -28,4 +28,4 @@ while(True):
     clientMultiSocket.connect((host, port))
     clientMultiSocket.send(data.encode("utf-8"))
     clientMultiSocket.close()
-    sleep(1)
+    sleep(60)
