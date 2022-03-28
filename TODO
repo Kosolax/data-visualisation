@@ -3,5 +3,5 @@ Mettre en place un watcher pour prévenir le front que la bdd a changé
 Structuré l'api express avec un chouilla d'architecture
 Rendre plus beau angular (voir rajouter de nouvelle visualisation)
 Ajouter le traiteur ( faut pouvoir lire les objets (double loads fonctionne, faut juste mettre dans un objet, puis faire les requetes sql))
-
 pour les dockerfile faut faire passer les port exposer via le .env
+attendre que la bdd soit lancer (pas juste que le docker soit lancer)

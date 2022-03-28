@@ -9,7 +9,7 @@ services:
       environment:
         - MYSQL_ALLOW_EMPTY_PASSWORD= "yes"
       # volumes:
-      #   - db-data:/var/lib/mysql
+      #   - db-data:/var/lib/mysql/au_bon_beurre
       networks:
           au-bon-beurre-network:
               ipv4_address: "${DB_DOCKER_IP}"
@@ -17,40 +17,50 @@ services:
     depends_on:
         - collector
     image: unit1
-    command: python3.7 /home/factory.py 1 /home "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
+    command: python3.7 /home/factory.py 1 /var/lib/data "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
     build: units-docker/.
+    # volumes:
+    #   - unit-data:/var/lib/data
     networks:
       - au-bon-beurre-network
   unit2:
     depends_on:
         - collector
     image: unit2
-    command: python3.7 /home/factory.py 2 /home "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
+    command: python3.7 /home/factory.py 2 /var/lib/data "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
     build: units-docker/.
+    # volumes:
+    #   - unit-data:/var/lib/data
     networks:
       - au-bon-beurre-network
   unit3:
     depends_on:
         - collector
     image: unit3
-    command: python3.7 /home/factory.py 3 /home "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
+    command: python3.7 /home/factory.py 3 /var/lib/data "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
     build: units-docker/.
+    # volumes:
+    #   - unit-data:/var/lib/data
     networks:
       - au-bon-beurre-network
   unit4:
     depends_on:
         - collector
     image: unit4
-    command: python3.7 /home/factory.py 4 /home "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
+    command: python3.7 /home/factory.py 4 /var/lib/data "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
     build: units-docker/.
+    # volumes:
+    #   - unit-data:/var/lib/data
     networks:
       - au-bon-beurre-network
   unit5:
     depends_on:
         - collector
     image: unit5
-    command: python3.7 /home/factory.py 5 /home "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
+    command: python3.7 /home/factory.py 5 /var/lib/data "${COLLECTOR_DOCKER_IP}" "${COLLECTOR_EXTERNAL_PORT}"
     build: units-docker/.
+    # volumes:
+    #   - unit-data:/var/lib/data
     networks:
       - au-bon-beurre-network
   collector:
@@ -88,19 +98,20 @@ services:
       - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
     networks:
       - au-bon-beurre-network
-  front:
-    depends_on:
-      - api
-    image: angular-app
-    build: 
-      dockerfile: ./front-docker/Dockerfile
-      context: ./
-    ports:
-      - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
-    networks:
-      - au-bon-beurre-network
+  # front:
+  #   depends_on:
+  #     - api
+  #   image: angular-app
+  #   build: 
+  #     dockerfile: ./front-docker/Dockerfile
+  #     context: ./
+  #   ports:
+  #     - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
+  #   networks:
+  #     - au-bon-beurre-network
 volumes:
   db-data:
+  unit-data:
 networks:
   au-bon-beurre-network:
     driver: bridge

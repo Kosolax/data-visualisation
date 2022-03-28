@@ -36,15 +36,28 @@ def insert(data):
 
     cursor = connection.cursor()
 
+    # if unit don't exist we insert it in db
     if not do_unit_exist(unit, cursor):
         insert_unit(unit, cursor, connection)
 
     for i in range(len(unit.automatons)):
+        # if automaton don't exist we insert it in db
         if not do_automaton_exist(unit, i, cursor):
             insert_automaton(unit, i, cursor, connection)
-
+            
+        # insert production data
         insert_production(unit, i, cursor, connection)
     connection.close()
+
+def get_last_milk_weight(unit, i, cursor, id_automaton):
+    sql_select_Query = "select milkWeight from productions where id_automaton = %s and id_unit = %s order by generatedTime desc;"
+    record = (id_automaton, unit.number,)
+    cursor.execute(sql_select_Query, record)
+    records = cursor.fetchall()
+    if cursor.rowcount == 0:
+        return 0
+    
+    return records[0][0]
 
 def load_unit(data):
     temp = json.loads(data)
@@ -53,8 +66,14 @@ def load_unit(data):
 
 def insert_production(unit, i, cursor, connection):
     id_automaton = get_automaton_id(unit, i, cursor)
+    # get the db last row
+    lastMilkWeight = get_last_milk_weight(unit, i, cursor, id_automaton)
     mySql_insert_query = """INSERT INTO productions (id_automaton, id_unit, tankTemperature, outsideTemperature, milkWeight, finalizedProductWeight, ph, k, naci, salmonel, ecoli, listeria, generatedTime) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s); """
-    record = (id_automaton, unit.number, unit.automatons[i].tankTemperature, unit.automatons[i].outsideTemperature, unit.automatons[i].milkWeight, 2, unit.automatons[i].ph, unit.automatons[i].k, unit.automatons[i].naci, unit.automatons[i].salmonel, unit.automatons[i].ecoli, unit.automatons[i].listeria, unit.automatons[i].generatedTime,)
+    finalizedProductWeight = unit.automatons[i].milkWeight - lastMilkWeight
+    if lastMilkWeight == 0:
+        finalizedProductWeight = 0
+
+    record = (id_automaton, unit.number, unit.automatons[i].tankTemperature, unit.automatons[i].outsideTemperature, unit.automatons[i].milkWeight, finalizedProductWeight, unit.automatons[i].ph, unit.automatons[i].k, unit.automatons[i].naci, unit.automatons[i].salmonel, unit.automatons[i].ecoli, unit.automatons[i].listeria, unit.automatons[i].generatedTime,)
     cursor.execute(mySql_insert_query, record)
     connection.commit()
 
