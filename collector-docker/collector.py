@@ -1,6 +1,7 @@
 from sys import argv
 import socket
 from _thread import *
+from Crypto.PublicKey import RSA
 
 # This file can get 4 arguments
 # 1 - The server port
@@ -10,9 +11,15 @@ from _thread import *
 
 def multi_threaded_client(connection):
     while True:
+        with open('private.pem','r') as fk:
+            priv = fk.read()
+            fk.close()
+
         # get the client data
-        data = connection.recv(int(argv[4])).decode("utf-8")
-        
+        print(connection.recv(int(argv[4])))
+        data = priv.decrypt(connection.recv(int(argv[4]))).decode("utf-8")
+        print(data)
+
         # open a connection for the writer
         writerSocket = socket.socket()
         host = argv[2]
