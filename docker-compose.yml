@@ -65,17 +65,17 @@ services:
       networks:
           au-bon-beurre-network:
               ipv4_address: "${COLLECTOR_DOCKER_IP}"
-  # writer:
-  #     depends_on:
-  #         - db
-  #     image: writer
-  #     command: python3.7 /home/writer.py "${WRITER_EXTERNAL_PORT}" "${DB_DOCKER_IP}" "${DB_EXTERNAL_PORT}" "${DB_DOCKER_NAME}" "root" "" "${SOCKET_SIZE}"
-  #     build: writer-docker/.
-  #     ports:
-  #         - "${WRITER_EXTERNAL_PORT}"
-  #     networks:
-  #         au-bon-beurre-network:
-  #             ipv4_address: "${WRITER_DOCKER_IP}"
+  writer:
+      depends_on:
+          - db
+      image: writer
+      command: python3.7 /home/writer.py "${WRITER_EXTERNAL_PORT}" "${DB_DOCKER_IP}" "${DB_EXTERNAL_PORT}" "${DB_DOCKER_NAME}" "root" "" "${SOCKET_SIZE}"
+      build: writer-docker/.
+      ports:
+          - "${WRITER_EXTERNAL_PORT}"
+      networks:
+          au-bon-beurre-network:
+              ipv4_address: "${WRITER_DOCKER_IP}"
   # api:
   #   depends_on:
   #     - db

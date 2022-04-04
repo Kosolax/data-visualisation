@@ -2,6 +2,7 @@ from sys import argv
 import socket
 from _thread import *
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 
 # This file can get 4 arguments
 # 1 - The server port
@@ -11,13 +12,25 @@ from Crypto.PublicKey import RSA
 
 def multi_threaded_client(connection):
     while True:
-        with open('private.pem','r') as fk:
-            priv = fk.read()
+
+        if not connection.recv(int(argv[4])):
+            print("BREAK")
+            break
+
+        with open('/home/private.pem','r') as fk:
+            priv = RSA.importKey(fk.read())
+            print('clef privee')
+            print(priv)
+
+            cipher = PKCS1_OAEP.new(priv)
+            data = cipher.decrypt(connection.recv(int(argv[4]))).decode("utf-8")
             fk.close()
 
-        # get the client data
+        print("chifrement")
         print(connection.recv(int(argv[4])))
-        data = priv.decrypt(connection.recv(int(argv[4]))).decode("utf-8")
+        print("KEYY")
+        print(priv)
+        print("DATAAAAAA")
         print(data)
 
         # open a connection for the writer
@@ -30,8 +43,7 @@ def multi_threaded_client(connection):
         writerSocket.send(data.encode("utf-8"))
         writerSocket.close()
         
-        if not data:
-            break
+
             
     connection.close()
 
