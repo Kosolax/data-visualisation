@@ -10,7 +10,7 @@ class unit:
         automatonTypes = [47648, 47649, 47650, 47651, 47652, 47653, 47654, 47655, 47656, 47657]
         self.number = number
         self.automatons = []
-        for i in range(10):
+        for i in range(1):
             self.automatons.append(automaton(i+1, automatonTypes[i]))
     
     def json_serial(self, obj):
