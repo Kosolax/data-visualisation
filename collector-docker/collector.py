@@ -12,20 +12,14 @@ from time import sleep, time
 # 3 - The writer port
 # 4 - The size of packets accepted by the server
 
+# Todo 
+# Différencier envoie clé symétrique / envoie json
+# Stocker les clés symétriques et les écraser (en fonction des unités)
+# Recomposer le json (s'assurer que ça soit dans un ordre, puis déchiffré puis recomposé en json)
 
-
-
+# Ban un gars qui fait n'imp au bout de 5 fois
 def multi_threaded_client(connection):
-
-
     while True:
-
-        if not connection.recv(int(argv[4])):
-            print('NULL')
-        else:
-            print('NOT NULL')
-
-
         with open('/home/private.pem','r') as fk:
             priv = RSA.importKey(fk.read())
             fk.close()

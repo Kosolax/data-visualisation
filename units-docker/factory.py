@@ -16,7 +16,6 @@ import base64
 
 unit = unit(int(argv[1]))
 
-
 dateLastKeyGeneration = ''
 keySync = ''
 
@@ -27,45 +26,34 @@ def update_key():
     keySync= encoded_secret_key
     return keySync
 
-
-
 def do_i_need_new_key():
-    ret = False
     if(dateLastKeyGeneration == '' or dateLastKeyGeneration < (datetime.now() - timedelta(hours=1)) ):
-        ret = True
-    return ret
+        return True
+    return False
 
-
-
-
-while(True):
-
-    print("boucle")
-
-    clientMultiSocket = socket.socket()
-
-
-    if(do_i_need_new_key()):
-        dateLastKeyGeneration = datetime.now()
-        keySync = update_key()
+def send_symetric_key():
+    dateLastKeyGeneration = datetime.now()
+    keySync = update_key()
 
     with open('/home/public.pem','r') as fp:
         pub = RSA.importKey(fp.read())
-
-
-    host = argv[3]
-    port = int(argv[4])
-
     cipher = PKCS1_OAEP.new(pub)
     clientMultiSocket.connect((host, port))
     encryptedKey = cipher.encrypt(keySync)
     clientMultiSocket.send(encryptedKey)
 
+# Todo
+# chiffrer avec la clé symétrique les données
+# découper le json en plein de petit bout
+# vérifier tpc vs udp
+while(True):
+    clientMultiSocket = socket.socket()
+    if(do_i_need_new_key()):
+        send_symetric_key()
 
-    #callback
-
-
-
+    host = argv[3]
+    port = int(argv[4])
+    
     # generate json file
     #nameFile = "paramunite" + str(unit.number) + "_" + str(time()) + ".json"
     #nameFile = argv[2] + "/" + nameFile
@@ -78,9 +66,6 @@ while(True):
     # send the file to the collector
 
     #clientMultiSocket.send(data.encode("utf-8"))
-
-
-        
     clientMultiSocket.close()
     fp.close()
-    sleep(10)
+    sleep(20)
