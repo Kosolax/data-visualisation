@@ -4,9 +4,9 @@ from time import sleep, time
 import socket
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import AES
 from datetime import datetime, timedelta
 import os
-import base64
 
 # This file can get 4 arguments
 # 1 - The unit number
@@ -22,50 +22,55 @@ keySync = ''
 def update_key():
     AES_key_length = 16
     secret_key = os.urandom(AES_key_length)
-    encoded_secret_key = base64.b64encode(secret_key)
-    keySync= encoded_secret_key
+    keySync= secret_key
     return keySync
 
 def do_i_need_new_key():
-    if(dateLastKeyGeneration == '' or dateLastKeyGeneration < (datetime.now() - timedelta(hours=1)) ):
+    if(dateLastKeyGeneration == '' or dateLastKeyGeneration < (datetime.now() - timedelta(minutes=1)) ):
         return True
     return False
 
-def send_symetric_key():
-    dateLastKeyGeneration = datetime.now()
-    keySync = update_key()
-
-    with open('/home/public.pem','r') as fp:
-        pub = RSA.importKey(fp.read())
-    cipher = PKCS1_OAEP.new(pub)
-    clientMultiSocket.connect((host, port))
-    encryptedKey = cipher.encrypt(keySync)
-    clientMultiSocket.send(encryptedKey)
-
-# Todo
-# chiffrer avec la clé symétrique les données
-# découper le json en plein de petit bout
-# vérifier tpc vs udp
 while(True):
-    clientMultiSocket = socket.socket()
-    if(do_i_need_new_key()):
-        send_symetric_key()
-
+    clientMultiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = argv[3]
     port = int(argv[4])
-    
+    clientMultiSocket.connect((host, port))
+
     # generate json file
-    #nameFile = "paramunite" + str(unit.number) + "_" + str(time()) + ".json"
-    #nameFile = argv[2] + "/" + nameFile
-    #unit.generate_json_file(nameFile)
+    nameFile = "paramunite" + str(unit.number) + "_" + str(time()) + ".json"
+    nameFile = argv[2] + "/" + nameFile
+    unit.generate_json_file(nameFile)
 
     # read the file
-    #file = open(nameFile, "r")
-    #data = file.read()
+    file = open(nameFile, "r")
+    data = file.read()
+    
+    if do_i_need_new_key():
+        dateLastKeyGeneration = datetime.now()
+        keySync = update_key()
+        cipherAES = AES.new(keySync)
+        # send the file to the collector
+        with open('/home/public.pem','r') as fp:
+            pub = RSA.importKey(fp.read())
+            fp.close()
+        cipherRSA = PKCS1_OAEP.new(pub)
+        encryptedKey = cipherRSA.encrypt(keySync)
+        integer_val = 1
+        bytes_val = integer_val.to_bytes(2, 'big')
+        clientMultiSocket.send(bytes_val)
+        sleep(1)
+        clientMultiSocket.send(encryptedKey)
+        sleep(1)
 
-    # send the file to the collector
-
-    #clientMultiSocket.send(data.encode("utf-8"))
+    while len(data) % 16 !=0:
+        data = data + " "
+        
+    integer_val = 2
+    bytes_val = integer_val.to_bytes(2, 'big')
+    encryptedJson = cipherAES.encrypt(data)
+    clientMultiSocket.send(bytes_val)
+    sleep(1)
+    clientMultiSocket.send(encryptedJson)
+    
     clientMultiSocket.close()
-    fp.close()
-    sleep(20)
+    sleep(10)

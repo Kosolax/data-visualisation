@@ -1,1 +1,2 @@
 pycrypto
+mysql-connector-python
