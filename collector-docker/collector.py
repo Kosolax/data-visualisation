@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 from time import sleep, time
 import json
 from unit import unit
+import mysql.connector as mysql
 
 # This file can get 4 arguments
 # 1 - The server port
@@ -22,8 +23,9 @@ dictionaryIpCountError = {}
 
 def multi_threaded_client(connection, address):
     try:
-        if dictionaryIpCountError[address] >= 5:
-            break
+        if address in dictionaryIpCountError and dictionaryIpCountError[address] >= 5:
+            print("BANNED")
+            return
 
         shouldReadKey = False
         shouldReadJson = False
