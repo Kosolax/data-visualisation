@@ -77,33 +77,33 @@ services:
       networks:
           au-bon-beurre-network:
               ipv4_address: "${WRITER_DOCKER_IP}"
-  api:
-    depends_on:
-      - db
-    image: express-api
-    env_file:
-      - ./.env
-    build: ./api-docker/.
-    restart: always
-    ports:
-      - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
-    environment:
-      - PORT_TO_EXPOSE="${API_DOCKER_PORT}"
-    networks:
-      - au-bon-beurre-network
-  front:
-    depends_on:
-      - api
-    image: angular-app
-    build: 
-      dockerfile: ./front-docker/Dockerfile
-      context: ./
-    ports:
-      - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
-    environment:
-      - FRONT_DOCKER_PORT="${FRONT_DOCKER_PORT}"
-    networks:
-      - au-bon-beurre-network
+  # api:
+  #   depends_on:
+  #     - db
+  #   image: express-api
+  #   env_file:
+  #     - ./.env
+  #   build: ./api-docker/.
+  #   restart: always
+  #   ports:
+  #     - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
+  #   environment:
+  #     - PORT_TO_EXPOSE="${API_DOCKER_PORT}"
+  #   networks:
+  #     - au-bon-beurre-network
+  # front:
+  #   depends_on:
+  #     - api
+  #   image: angular-app
+  #   build: 
+  #     dockerfile: ./front-docker/Dockerfile
+  #     context: ./
+  #   ports:
+  #     - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
+  #   environment:
+  #     - FRONT_DOCKER_PORT="${FRONT_DOCKER_PORT}"
+  #   networks:
+  #     - au-bon-beurre-network
 volumes:
   db-data:
 networks:
