@@ -8,6 +8,7 @@ services:
         - "${DB_EXTERNAL_PORT}:${DB_DOCKER_PORT}"
       environment:
         - MYSQL_ALLOW_EMPTY_PASSWORD= "yes"
+        - DB_DOCKER_PORT="${DB_DOCKER_PORT}"
       # volumes:
       #   - db-data:/var/lib/mysql/au_bon_beurre
       networks:
@@ -86,6 +87,8 @@ services:
   #   restart: always
   #   ports:
   #     - "${API_EXTERNAL_PORT}:${API_DOCKER_PORT}"
+  #   environment:
+  #     - PORT_TO_EXPOSE="${API_DOCKER_PORT}"
   #   networks:
   #     - au-bon-beurre-network
   # front:
@@ -97,6 +100,8 @@ services:
   #     context: ./
   #   ports:
   #     - "${FRONT_EXTERNAL_PORT}:${FRONT_DOCKER_PORT}"
+  #   environment:
+  #     - FRONT_DOCKER_PORT="${FRONT_DOCKER_PORT}"
   #   networks:
   #     - au-bon-beurre-network
 volumes:

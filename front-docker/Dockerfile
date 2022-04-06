@@ -3,6 +3,8 @@
 # Use official node image as the base image
 FROM node:latest as build
 
+ENV FRONT_DOCKER_PORT 80
+
 # Set the working directory
 WORKDIR /usr/local/app
 
@@ -13,7 +15,7 @@ COPY ./front-docker/front-repos/au_bon_beurre_front /usr/local/app/
 COPY .env /usr/local/app/src/assets/config.env
 
 # Install all the dependencies
-RUN npm install
+# RUN npm install
 
 # Generate the build of the application
 RUN npm run build
@@ -28,4 +30,4 @@ FROM nginx:latest
 COPY --from=build /usr/local/app/dist/un_bon_beurre_front /usr/share/nginx/html
 
 # Expose port 80
-EXPOSE 80
+EXPOSE ${FRONT_DOCKER_PORT}
