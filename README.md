@@ -18,6 +18,6 @@
 
 
 
-  COMMANDE
+  Lancer le projet
   
 -> docker-compose up 
