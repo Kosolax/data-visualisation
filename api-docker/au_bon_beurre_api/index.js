@@ -13,7 +13,7 @@ function initConnection() {
         user: 'root',
         password: '',
         port: process.env.DB_EXTERNAL_PORT || 3306,
-        database: "au_bon_beurre"
+        database: process.env.DB_DOCKER_NAME || "au_bon_beurre"
     });
 }
 

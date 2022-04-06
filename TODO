@@ -4,6 +4,4 @@ Structuré l'api express avec un chouilla d'architecture
 
 Rendre plus beau angular (voir rajouter de nouvelle visualisation)
 
-pour les dockerfile faut faire passer les port exposer via le .env
-
 attendre que la bdd soit lancer (unit + collector + writer + api) (pas juste que le docker soit lancer)
