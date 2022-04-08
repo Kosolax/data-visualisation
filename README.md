@@ -46,7 +46,7 @@ Si un trop grand nombre d'envoi de données eronnées est atteint, l'unité conc
 
 ### La Base de données
 
-![bdd](https://user-images.githubusercontent.com/45556519/162456184-7ad80c18-802f-49ed-b285-d42bd5665069.png)
+![bdd](https://user-images.githubusercontent.com/45556519/162459387-6e300101-56c5-44ac-ab85-ee7f99a518d5.png)
 
 La Base de données est sous MySQL. Elle permet de stocker les valeurs des automates et des unitées que le Collecteur lui envoi.
 
