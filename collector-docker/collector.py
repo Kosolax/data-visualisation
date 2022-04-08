@@ -8,6 +8,9 @@ from time import sleep, time
 import json
 from unit import unit
 import mysql.connector as mysql
+import struct
+from operator import xor
+from bitstring import BitArray
 
 # This file can get 4 arguments
 # 1 - The server port
@@ -20,6 +23,8 @@ import mysql.connector as mysql
 
 dictionaryIpSyncKey = {}
 dictionaryIpCountError = {}
+dictionaryIpNameFile = {}
+dictionaryIpMask = {}
 
 def multi_threaded_client(connection, address):
     try:
@@ -29,6 +34,8 @@ def multi_threaded_client(connection, address):
 
         shouldReadKey = False
         shouldReadJson = False
+        shouldReadNameFile = False
+        shouldReadMask = False
         while True:
             incomingData = connection.recv(int(argv[7]))
             if not incomingData:
@@ -37,11 +44,31 @@ def multi_threaded_client(connection, address):
             if (shouldReadJson):
                 print("json")
                 shouldReadJson = False
-                if address in dictionaryIpSyncKey:
+                if address in dictionaryIpSyncKey and address in dictionaryIpMask and address in dictionaryIpNameFile:
                     cipherAES = AES.new(dictionaryIpSyncKey[address])
                     myJson = cipherAES.decrypt(incomingData)
-                    insert(myJson.decode("utf-8"))
+                    unit = load_unit(myJson.decode("utf-8"))
                     
+                    epoch = float(dictionaryIpNameFile[address].split("_")[1].split(".json")[0])
+                    bitsEpoch = BitArray(float=epoch, length=64)
+                    bitsMask = bytearray(dictionaryIpMask[address])
+                    results = []
+                    for i, bit in enumerate(bitsEpoch):
+                        results.append(xor(bit,bitsMask[i]))
+                        
+                    shouldWeAllowToInsert = True
+                    for i, byte in enumerate(unit.generatedTime):
+                        if (byte != results[i]):
+                            shouldWeAllowToInsert = False
+                            print("NONONO")
+                            if address in dictionaryIpCountError:
+                                dictionaryIpCountError[address] = dictionaryIpCountError[address] + 1
+                            else:
+                                dictionaryIpCountError[address] = 1
+
+                    if shouldWeAllowToInsert:
+                        print("insert")
+                        insert(unit, epoch)
 
             if (shouldReadKey):
                 print("key")
@@ -53,11 +80,35 @@ def multi_threaded_client(connection, address):
                 myUnitKey = cipherRSA.decrypt(incomingData)
                 dictionaryIpSyncKey[address] = myUnitKey
 
+            if (shouldReadNameFile):
+                shouldReadNameFile = False
+                print("nameFile")
+                if address in dictionaryIpSyncKey:
+                    cipherAES = AES.new(dictionaryIpSyncKey[address])
+                    nameFile = cipherAES.decrypt(incomingData)
+                    dictionaryIpNameFile[address] = nameFile.decode("utf-8")
+
+            if (shouldReadMask):
+                shouldReadMask = False
+                print("mask")
+                with open('/home/private.pem','r') as fk:
+                    priv = RSA.importKey(fk.read())
+                    fk.close()
+                cipherRSA = PKCS1_OAEP.new(priv)
+                mask = cipherRSA.decrypt(incomingData)
+                dictionaryIpMask[address] = mask
+
             if (int.from_bytes(incomingData, 'big') == 1):
                 shouldReadKey = True
 
             if (int.from_bytes(incomingData, 'big') == 2):
                 shouldReadJson = True
+
+            if (int.from_bytes(incomingData, 'big') == 3):
+                shouldReadNameFile = True
+
+            if (int.from_bytes(incomingData, 'big') == 4):
+                shouldReadMask = True
     except:
         if address in dictionaryIpCountError:
             dictionaryIpCountError[address] = dictionaryIpCountError[address] + 1
@@ -68,11 +119,10 @@ def multi_threaded_client(connection, address):
 def load_unit(data):
     temp = json.loads(data)
     dictionaryUnit = json.loads(temp)
-    return unit(dictionaryUnit["number"], dictionaryUnit["automatons"])
+    return unit(dictionaryUnit["number"], dictionaryUnit["generatedTime"], dictionaryUnit["automatons"])
 
-def insert(data):
+def insert(unit, epoch):
     # get data inside an object
-    unit = load_unit(data)
 
     connection = db_connection()
 
@@ -83,7 +133,7 @@ def insert(data):
 
     # if unit don't exist we insert it in db
     if not do_unit_exist(unit, cursor):
-        insert_unit(unit, cursor, connection)
+        insert_unit(unit, cursor, connection, epoch)
 
     for i in range(len(unit.automatons)):
         # if automaton don't exist we insert it in db
@@ -103,11 +153,6 @@ def get_last_milk_weight(unit, i, cursor, id_automaton):
         return 0
     
     return records[0][0]
-
-def load_unit(data):
-    temp = json.loads(data)
-    dictionaryUnit = json.loads(temp)
-    return unit(dictionaryUnit["number"], dictionaryUnit["automatons"])
 
 def insert_production(unit, i, cursor, connection):
     id_automaton = get_automaton_id(unit, i, cursor)
@@ -158,9 +203,9 @@ def do_unit_exist(unit, cursor):
     
     return True
 
-def insert_unit(unit, cursor, connection):
-    mySql_insert_query = """INSERT INTO units VALUES (%s); """
-    record = (unit.number,)
+def insert_unit(unit, cursor, connection, epoch):
+    mySql_insert_query = """INSERT INTO units VALUES (%s, %s); """
+    record = (unit.number, epoch)
     cursor.execute(mySql_insert_query, record)
     connection.commit()
 

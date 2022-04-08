@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `productions` (
 -- Listage de la structure de la table au_bon_beurre. units
 CREATE TABLE IF NOT EXISTS `units` (
   `number` int(11) NOT NULL,
+  `generatedTime` float DEFAULT NULL,
   PRIMARY KEY (`number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 

@@ -4,11 +4,13 @@ import json
 
 class unit:
     number : int
+    generatedTime : []
     automatons = []
 
-    def __init__(self, number):
+    def __init__(self, number, generatedTime):
         automatonTypes = [47648, 47649, 47650, 47651, 47652, 47653, 47654, 47655, 47656, 47657]
         self.number = number
+        self.generatedTime = generatedTime
         self.automatons = []
         for i in range(10):
             self.automatons.append(automaton(i+1, automatonTypes[i]))
