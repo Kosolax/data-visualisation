@@ -1,33 +1,39 @@
 # data-visualisation
 
-  DONE
-
--> Dockerisation de l'ensemble de la chaine de production
--> Génération des données
--> Chiffrement et déchiffrement des json
--> Insertion en base de données
--> Ban des unitées lors de 5 requetes invalides
-
-
-  TODO
-
--> Chiffrement décalage des bits
--> Débuter l'envoie de données après que la base de données soit mise en place (et non avant)
--> Poposer une reprise des données si insertions manquées
--> Configurer un conteneur docker pour l'affichage des données
 
 
 Architecture globale
   schéma Architecture global : moyen de communication
   
 ![Architecture global](https://user-images.githubusercontent.com/45556519/162449498-30c04c65-85af-459b-bd01-815f9ba2df29.png)
+![image](https://user-images.githubusercontent.com/51312073/162450701-2edfa4c6-baa9-4cb6-bd51-96408c6a834b.png)
+
 
   Schéma sur le chiffrement
 
 
-  L’Unit
+  L'unitée
 
-  Le Collecteur
+    Nos cinq conteneurs "Unit" ont pour role de simuler les données de production. Ainsi, toutes les minutes les données de chaque unitée sont envoyées au format JSON     à un autre conteneur docker
+    nommée collecteur.
+
+    Afin de garantir la confidentialitée des données nous chiffrons les fichiers JSON à l'aide d'une clef symétrique.
+    Cette clef envoyée au préalable est changée toutes les heures pour des raisons de sécurité.
+
+Le collecteur
+
+  Le collecteur receptionne un bon nombre d'informations. Il doit dans un premier temps déchiffrer et stocker:
+ 	  - les masques de preuve de travail
+	  - les clefs symétrique
+	  - les noms des fichiers JSON 
+	  - les JSON contenant les données
+
+  Une fois ces données correctement sauvegardées dans la RAM le collecteur compare les noms des fichiers JSON
+  avec les masques. Si correspondance, le collecteur fait un controle sur la pertinence des données avant insertion en base de données.
+
+  Chaque action effectuée est sauvegardée dans un fichier de log (doublons, valeurs incoherantes, lecture/changement de clef ... ).
+  Si un trop grand nombre d'envoi de données est admis, les unitées seront bannies et n'auront plus la possiblité de communiquer avec le collecteur. 
+
 
   La Base de Données
     La Base de données est sous MySQL. Elle permet de stockée les valeurs des automates et des unités que le Collecteur lui envoie.
