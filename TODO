@@ -1,7 +1,5 @@
-Ajoutez les .dockerignore
-
 Structuré l'api express avec un chouilla d'architecture
-
 Rendre plus beau angular (voir rajouter de nouvelle visualisation)
-
-attendre que la bdd soit lancer (unit + collector + writer + api) (pas juste que le docker soit lancer)
+attendre que la bdd soit lancer (unit + collector + api) (pas juste que le docker soit lancer)
+Supprimer la notion de vérification par l'ip dans le collecteur
+Changer les int du collecteur en enum

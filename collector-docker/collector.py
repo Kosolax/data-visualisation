@@ -11,6 +11,7 @@ import mysql.connector as mysql
 import struct
 from operator import xor
 from bitstring import BitArray
+import time
 
 # This file can get 4 arguments
 # 1 - The server port
@@ -26,10 +27,20 @@ dictionaryIpCountError = {}
 dictionaryIpNameFile = {}
 dictionaryIpMask = {}
 
+def write_log(text_to_append):
+    print("write_log")
+    with open("/home/log.txt","a+") as file:
+        file.seek(0)
+        data = file.read(100)
+        if len(data) > 0:
+            file.write("\n")
+        file.write(str(time.time()) + ":" + text_to_append)
+
 def multi_threaded_client(connection, address):
     try:
         if address in dictionaryIpCountError and dictionaryIpCountError[address] >= 5:
-            print("BANNED")
+            print("Banned")
+            write_log("The user is trying to connect even if he's banned.")
             return
 
         shouldReadKey = False
@@ -42,37 +53,41 @@ def multi_threaded_client(connection, address):
                 break
 
             if (shouldReadJson):
-                print("json")
                 shouldReadJson = False
+                write_log("reading json file")
                 if address in dictionaryIpSyncKey and address in dictionaryIpMask and address in dictionaryIpNameFile:
                     cipherAES = AES.new(dictionaryIpSyncKey[address])
                     myJson = cipherAES.decrypt(incomingData)
                     unit = load_unit(myJson.decode("utf-8"))
                     
+                    write_log("calculating proof of work")
+                    # Essaye de calculer la preuve de travail à partir du nom du json
                     epoch = float(dictionaryIpNameFile[address].split("_")[1].split(".json")[0])
                     bitsEpoch = BitArray(float=epoch, length=64)
                     bitsMask = bytearray(dictionaryIpMask[address])
                     results = []
                     for i, bit in enumerate(bitsEpoch):
                         results.append(xor(bit,bitsMask[i]))
-                        
+                    
+                    write_log("comparing proof of work")
+                    # Comparaison entre les deux preuves de travails
                     shouldWeAllowToInsert = True
                     for i, byte in enumerate(unit.generatedTime):
                         if (byte != results[i]):
                             shouldWeAllowToInsert = False
-                            print("NONONO")
+                            write_log("the proof of work doesn't match")
                             if address in dictionaryIpCountError:
                                 dictionaryIpCountError[address] = dictionaryIpCountError[address] + 1
                             else:
                                 dictionaryIpCountError[address] = 1
 
                     if shouldWeAllowToInsert:
-                        print("insert")
+                        write_log("the proof of work match")
                         insert(unit, epoch)
 
             if (shouldReadKey):
-                print("key")
                 shouldReadKey = False
+                write_log("reading asynchrone key")
                 with open('/home/private.pem','r') as fk:
                     priv = RSA.importKey(fk.read())
                     fk.close()
@@ -82,7 +97,7 @@ def multi_threaded_client(connection, address):
 
             if (shouldReadNameFile):
                 shouldReadNameFile = False
-                print("nameFile")
+                write_log("reading name file")
                 if address in dictionaryIpSyncKey:
                     cipherAES = AES.new(dictionaryIpSyncKey[address])
                     nameFile = cipherAES.decrypt(incomingData)
@@ -90,7 +105,7 @@ def multi_threaded_client(connection, address):
 
             if (shouldReadMask):
                 shouldReadMask = False
-                print("mask")
+                write_log("reading mask")
                 with open('/home/private.pem','r') as fk:
                     priv = RSA.importKey(fk.read())
                     fk.close()
@@ -133,16 +148,34 @@ def insert(unit, epoch):
 
     # if unit don't exist we insert it in db
     if not do_unit_exist(unit, cursor):
+        write_log("insert a new unit")
         insert_unit(unit, cursor, connection, epoch)
 
     for i in range(len(unit.automatons)):
         # if automaton don't exist we insert it in db
         if not do_automaton_exist(unit, i, cursor):
+            write_log("insert a new automaton")
             insert_automaton(unit, i, cursor, connection)
             
+        if (not do_production_exist(unit, i, cursor)):
+            write_log("We have a duplicate data, we don't insert it in db.")
+            continue
+
         # insert production data
+        write_log("insert a new entry of data")
         insert_production(unit, i, cursor, connection)
     connection.close()
+
+def do_production_exist(unit, i, cursor):
+    id_automaton = get_automaton_id(unit, i, cursor)
+    sql_select_Query = "select * from productions where id_automaton = %s and id_unit = %s and generatedTime = %s;"
+    record = (id_automaton, unit.number, unit.automatons[i].generatedTime)
+    cursor.execute(sql_select_Query, record)
+    records = cursor.fetchall()
+    if cursor.rowcount == 0:
+        return True
+    
+    return False
 
 def get_last_milk_weight(unit, i, cursor, id_automaton):
     sql_select_Query = "select milkWeight from productions where id_automaton = %s and id_unit = %s order by generatedTime desc;"
@@ -162,6 +195,42 @@ def insert_production(unit, i, cursor, connection):
     finalizedProductWeight = unit.automatons[i].milkWeight - lastMilkWeight
     if lastMilkWeight == 0:
         finalizedProductWeight = 0
+
+    if (not (unit.automatons[i].tankTemperature >= 2.5 and unit.automatons[i].tankTemperature <= 4)):
+        write_log("The tank temperature should be between 2.5 and 4. That's why we reject the JSON")
+        return
+
+    if (not (unit.automatons[i].outsideTemperature >= 8 and unit.automatons[i].outsideTemperature <= 14)):
+        write_log("The outside temperature should be between 8 and 14. That's why we reject the JSON")
+        return
+
+    if (not (unit.automatons[i].milkWeight >= 3512 and unit.automatons[i].milkWeight <= 4607)):
+        write_log("The weight of the milk should be between 3512 and 4607. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].ph >= 6.8 and unit.automatons[i].ph <= 7.2)):
+        write_log("The ph should be between 6.8 and 7.2. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].k >= 35 and unit.automatons[i].k <= 47)):
+        write_log("The k should be between 6.8 and 7.2. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].naci >= 1 and unit.automatons[i].naci <= 1.7)):
+        write_log("The naci should be between 1 and 1.7. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].salmonel >= 17 and unit.automatons[i].salmonel <= 37)):
+        write_log("The salmonel should be between 17 and 37. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].ecoli >= 35 and unit.automatons[i].ecoli <= 49)):
+        write_log("The ecoli should be between 35 and 49. That's why we reject the JSON")
+        return
+
+    if (not(unit.automatons[i].listeria >= 28 and unit.automatons[i].listeria <= 54)):
+        write_log("The listeria should be between 28 and 54. That's why we reject the JSON")
+        return
 
     record = (id_automaton, unit.number, unit.automatons[i].tankTemperature, unit.automatons[i].outsideTemperature, unit.automatons[i].milkWeight, finalizedProductWeight, unit.automatons[i].ph, unit.automatons[i].k, unit.automatons[i].naci, unit.automatons[i].salmonel, unit.automatons[i].ecoli, unit.automatons[i].listeria, unit.automatons[i].generatedTime,)
     cursor.execute(mySql_insert_query, record)

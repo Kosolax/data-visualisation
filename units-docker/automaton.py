@@ -32,7 +32,7 @@ class automaton :
         self.generatedTime = datetime.utcnow()
     
     def generate_tank_temperature(self):
-        self.tankTemperature = round(uniform(2.5, 4), 1)
+        self.tankTemperature = round(uniform(2.5, 4.5), 1)
 
     def generate_outside_temperature(self):
         self.outsideTemperature = round(uniform(8, 14), 1)

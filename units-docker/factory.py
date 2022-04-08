@@ -30,7 +30,7 @@ def update_key():
     return keySync
 
 def do_i_need_new_key():
-    if(dateLastKeyGeneration == '' or dateLastKeyGeneration < (datetime.now() - timedelta(minutes=1)) ):
+    if(dateLastKeyGeneration == '' or dateLastKeyGeneration < (datetime.now() - timedelta(hours=1)) ):
         return True
     return False
 
@@ -99,10 +99,10 @@ while(True):
     while len(nameFile) % 16 !=0:
         nameFile = nameFile + " "
 
-    encryptedJson = cipherAES.encrypt(nameFile)
+    encryptedNameFile = cipherAES.encrypt(nameFile)
     clientMultiSocket.send(bytes_val)
     sleep(1)
-    clientMultiSocket.send(encryptedJson)
+    clientMultiSocket.send(encryptedNameFile)
     sleep(1)
     
     while len(data) % 16 !=0:
