@@ -37,7 +37,7 @@ app.get('/unit/:unitId', (req, res) => {
 
 app.get('/productions/:unitId/:automateId', (req, res) => {
     initConnection();
-    connection.query('select * from productions where id_automaton = ' + req.params.automateId + ' AND id_unit = ' + req.params.unitId + ' ORDER BY generatedTime;', function(err, rows, fields) {
+    connection.query('select * from productions where productions.id_automaton = (select id from automatons where automatons.id_unit = productions.id_unit and automatons.id_unit = ' + req.params.unitId + ' and automatons.number = ' + req.params.automateId + ' limit 1) ORDER BY generatedTime;', function(err, rows, fields) {
         if (err) throw err;
         res.send(rows)
     });
